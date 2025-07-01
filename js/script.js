@@ -7,6 +7,7 @@ function redirectToTelegram(productName) {
 const searchInput = document.getElementById("searchInput");
 searchInput.addEventListener("input", function () {
   const filter = this.value.toLowerCase();
+
   const cards = document.querySelectorAll(".card");
   cards.forEach(card => {
     const name = card.dataset.name.toLowerCase();
@@ -14,10 +15,11 @@ searchInput.addEventListener("input", function () {
   });
 });
 
-// Load products from backend
+// Load products from backend (fixed URL for production)
+
 async function loadItems() {
   try {
-    const res = await fetch('/api/items');
+    const res = await fetch('https://techdominion-backend.onrender.com/api/items');
     const items = await res.json();
 
     const softwareList = document.getElementById('software-list');
