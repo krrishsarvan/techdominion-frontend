@@ -1,22 +1,75 @@
-function redirectToTelegram(productName) {
-  const message = encodeURIComponent(`Hello sir, I am interested in "${productName}"`);
-  window.open(`https://t.me/monarchrise?text=${message}`, '_blank');
-}
+const express = require('express');
+const session = require('express-session');
+const fs = require('fs');
+const path = require('path');
+const bodyParser = require('body-parser');
+const cors = require('cors');
 
-// Live search
-const searchInput = document.getElementById("searchInput");
-searchInput.addEventListener("input", function () {
-  const filter = this.value.toLowerCase();
+const app = express();
+const PORT = process.env.PORT || 3001;
 
-  const cards = document.querySelectorAll(".card");
-  cards.forEach(card => {
-    const name = card.dataset.name.toLowerCase();
-    card.style.display = name.includes(filter) ? "block" : "none";
-  });
+const DATA_FILE = path.join(__dirname, 'data.json');
+
+// ✅ Middleware Setup
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// ✅ Session Setup (IMPORTANT for login)
+app.use(session({
+  secret: 'supersecuresecret',
+  resave: false,
+  saveUninitialized: false
+}));
+
+// ✅ Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ✅ Serve login page (fix for Cannot GET /login)
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/login.html'));
 });
 
-// Load products from backend (fixed URL for production)
+// ✅ Handle login POST
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
 
+  if (username === 'krrishsarvan' && password === 'supremecoder05') {
+    req.session.authenticated = true;
+    res.json({ success: true });
+  } else {
+    res.json({ success: false, message: 'Invalid credentials' });
+  }
+});
+
+// ✅ Protect admin.html route
+app.get('/admin.html', (req, res) => {
+  if (req.session.authenticated) {
+    res.sendFile(path.join(__dirname, 'public/admin.html'));
+  } else {
+    res.redirect('/login');
+  }
+});
+
+// ✅ API: Get all items
+app.get('/api/items', (req, res) => {
+  const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
+  res.json(data);
+});
+
+// ✅ API: Add item
+app.post('/api/items', (req, res) => {
+  const newItem = req.body;
+  const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
+  data.push(newItem);
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+  res.status(201).json({ message: 'Item added successfully' });
+});
+
+// ✅ Start server (fix for crash error)
+app.listen(PORT, () => {
+  console.log(`✅ Server running at http://localhost:${PORT}`);
+});
 async function loadItems() {
   try {
     const res = await fetch('https://techdominion-backend.onrender.com/api/items');
@@ -25,7 +78,6 @@ async function loadItems() {
     const softwareList = document.getElementById('software-list');
     const courseList = document.getElementById('course-list');
 
-    // Clear existing
     softwareList.innerHTML = '';
     courseList.innerHTML = '';
 
@@ -48,11 +100,10 @@ async function loadItems() {
         courseList.appendChild(card);
       }
     });
-
   } catch (error) {
     console.error('❌ Failed to load items:', error);
   }
 }
 
-// Load items when page loads
 window.addEventListener('DOMContentLoaded', loadItems);
+
