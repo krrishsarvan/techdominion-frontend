@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel - Tech Dominion</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+
+<body class="admin-body">
+  <div class="admin-panel">
+    <h2 class="admin-heading">Add New Product</h2>
+    <form id="addForm" class="admin-form">
+      <input type="text" id="name" placeholder="Product Name" required />
+      <input type="text" id="price" placeholder="Discounted Price (e.g. ₹499)" required />
+      <input type="text" id="originalPrice" placeholder="Original Price (e.g. ₹4999)" required />
+      <input type="text" id="img" placeholder="Image Path (e.g. assets/images/i1.png)" required />
+      <select id="category" required>
+        <option value="">--Select Category--</option>
+        <option value="software">Software</option>
+        <option value="courses">Courses</option>
+      </select>
+      <textarea id="desc" placeholder="Short Description" required></textarea>
+      <button type="submit">Add Product</button>
+    </form>
+    <p id="msg"></p>
+  </div>
+
+  <script>
+    const form = document.getElementById('addForm');
+    const msg = document.getElementById('msg');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const item = {
+        name: document.getElementById('name').value,
+        price: document.getElementById('price').value,
+        originalPrice: document.getElementById('originalPrice').value,
+        img: document.getElementById('img').value,
+        category: document.getElementById('category').value,
+        desc: document.getElementById('desc').value
+      };
+
+     const res = await fetch('http://localhost:3000/api/items', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(item)
+});
+
+      if (res.ok) {
+        msg.innerText = '✅ Product added successfully!';
+        msg.style.color = 'limegreen';
+        form.reset();
+      } else {
+        msg.innerText = '❌ Failed to add product.';
+        msg.style.color = 'red';
+      }
+    });
+  </script>
+</body>
+
+</html>
