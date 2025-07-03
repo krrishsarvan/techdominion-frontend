@@ -44,15 +44,17 @@
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
 
-      const res = await fetch('/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
+const res = await fetch('https://techdominion-backend.onrender.com/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ username, password })
+});
+
 
       const result = await res.json();
       if (result.success) {
-        window.location.href = '/admin.html';
+        window.location.href = 'https://krrishsarvan.github.io/techdominion-frontend/admin.html';
+
       } else {
         alert(result.message || "Login failed");
       }
