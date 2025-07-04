@@ -4,84 +4,118 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>About - Tech Dominion</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
- 
-body {
-  background: #24355a;
-  font-family: 'Poppins', sans-serif;
-  margin: 0;
-  padding: 2rem 1rem;
-  color: #ccc;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-
-    .about-section {
-      padding: 3rem 2rem;
+    body {
+      background: radial-gradient(ellipse at center, #0f111a 0%, #06080d 100%);
+      font-family: 'Poppins', sans-serif;
+      color: #e0e0e0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
       text-align: center;
+      padding: 2rem;
+    }
+
+    .container {
       max-width: 700px;
-      background: linear-gradient(145deg, rgba(15, 12, 41, 0.9), rgba(0, 255, 231, 0.08));
-      border-radius: 16px;
-      box-shadow: 0 0 40px rgba(0, 255, 231, 0.12);
-      backdrop-filter: blur(10px);
+      animation: fadeIn 1s ease-out forwards;
     }
 
-    .about-section img {
-      width: 150px;
-      height: 150px;
-      object-fit: cover;
+    .container img {
+      width: 140px;
+      height: 140px;
       border-radius: 50%;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
-    }
-
-    .about-section h2 {
-      font-size: 2rem;
-      color: #00ffe7;
+      object-fit: cover;
       margin-bottom: 1rem;
-      text-shadow: 0 0 10px #00ffe7;
+      border: 2px solid #00ffe7;
+      box-shadow: 0 0 20px rgba(0, 255, 231, 0.4);
     }
 
-    .about-section p {
-      font-size: 1rem;
-      line-height: 1.8;
-      color: #ccc;
-    }
-
-    .back-home {
-      margin-top: 2rem;
-      display: inline-block;
-      padding: 0.6rem 1.4rem;
-      background: rgba(255, 255, 255, 0.1);
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.4rem;
       color: #00ffe7;
-      border-radius: 999px;
+      text-shadow: 0 0 10px #00ffe7;
+      margin-bottom: 1rem;
+    }
+
+    p {
+      font-size: 1.1rem;
+      color: #c9c9c9;
+      line-height: 1.7;
+    }
+
+    .highlight {
+      color: #00ffe7;
+      font-weight: 500;
+    }
+
+    a.back-home {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 0.7rem 1.4rem;
+      background: #0d1117;
+      border-radius: 50px;
+      color: #00ffe7;
       text-decoration: none;
+      font-weight: 500;
+      box-shadow: 0 0 12px rgba(0, 255, 231, 0.2);
       transition: all 0.3s ease;
     }
 
-    .back-home:hover {
-      background: rgba(255, 255, 255, 0.2);
-      box-shadow: 0 0 12px #00ffe7;
+    a.back-home:hover {
+      background: rgba(0, 255, 231, 0.08);
+      box-shadow: 0 0 16px #00ffe7;
     }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media screen and (max-width: 600px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      p {
+        font-size: 1rem;
+      }
+    }
+
   </style>
 </head>
 <body>
-  <section class="about-section">
+  <div class="container">
     <img src="assets/images/profile.jpg" alt="Krrish Sarvan">
-    <h2>Hi, I'm Krrish Sarvan</h2>
-    <p>
-      A passionate web developer specializing in <strong>HTML, CSS, JavaScript</strong>, and <strong>Python</strong>.<br>
-      I love creating unique and engaging websites with modern design principles.<br><br>
-      My goal is to build high-quality web experiences that stand out. <br>
-      When I'm not coding, I enjoy <em>anime, gaming, and experimenting with creative designs</em>.
-    </p>
+    <h1>Hi, I'm Krrish Sarvan</h1>
+
+<p>
+  A passionate <span class="highlight">web developer</span> <br>
+
+  I'm specializing in <span class="highlight">HTML</span>, <span class="highlight">CSS</span>, <span class="highlight">JavaScript</span>, and <span class="highlight">Python</span> — crafting interactive, responsive, and visually captivating digital experiences.<br><br>
+
+  My mission? To build <span class="highlight">modern, high-performance websites</span> that not only stand out but leave a lasting impression.<br><br>
+
+  Beyond the code, I fuel my creativity through <em>anime, gaming</em>, and constant experimentation with <span class="highlight">bold, boundary-pushing design</span>.
+</p>
+
+
     <a href="index.html" class="back-home">← Back to Home</a>
-  </section>
+  </div>
 </body>
 </html>
