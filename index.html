@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tech Dominion</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
@@ -25,53 +24,96 @@
     <img src="assets/images/monarch-logo.png" alt="Monarch Logo" class="logo">
     <h1 class="glow-text">Tech Dominion</h1>
     <input type="text" id="searchInput" placeholder="Search Software or Courses..." class="search-inside-banner">
-    <nav>
-      <ul>
-        <li><a href="#software">Software</a></li>
-        <li><a href="#courses">Courses</a></li>
-      </ul>
-    </nav>
+
   </section>
 
-  <!-- Main Section -->
-  <main>
-    <!-- Software Section -->
-    <section id="software">
-      <h2>Software</h2>
-      <div class="card-container" id="software-list">
-        <!-- Software cards will be injected here dynamically -->
+  <!-- 🔷 Card Navigation -->
+  <section class="section-card-navigation">
+    <div class="card-container">
+      <div class="glass-card" onclick="location.href='software.html'">
+        <h3>Software</h3>
+        <p>Explore premium tools at the best prices.</p>
       </div>
-    </section>
-
-    <!-- Courses Section -->
-    <section id="courses">
-      <h2>Courses</h2>
-      <div class="card-container" id="course-list">
-        <!-- Course cards will be injected here dynamically -->
+      <div class="glass-card" onclick="location.href='courses.html'">
+        <h3>Courses</h3>
+        <p>Master your skills with elite resources.</p>
       </div>
-    </section>
-  </main>
+      <div class="glass-card" onclick="location.href='notes.html'">
+        <h3>Free Notes</h3>
+        <p>View PDFs in one click — no ads.</p>
+      </div>
+      <div class="glass-card" onclick="location.href='project.html'">
+        <h3>Projects</h3>
+        <p>Discover our personal and open-source work.</p>
+      </div>
+    </div>
+  </section>
 
 
-  
-  <!-- Footer Section -->
+  <!-- 🔷 Testimonials -->
+  <section id="testimonials">
+    <h2>What Users Say</h2>
+    <div class="card-container">
+      <div class="card">Amazing deals! Got a tool worth ₹5K for just ₹500. 🔥</div>
+      <div class="card">Fast support, genuine service. Totally trustworthy. 💯</div>
+      <div class="card">Loved the UI and premium feel. 🧊</div>
+      <div class="card">Downloaded free notes — saved my semester! 🎓</div>
+      <div class="card">Saved ₹3K on a course. Tech Dominion rocks. 🤝</div>
+    </div>
+  </section>
+
+  <!-- 🔷 Footer -->
   <footer class="footer">
     <p>📞 Need help? <a href="https://t.me/monarchrise" target="_blank">Message us on Telegram</a></p>
     <div class="social-icons">
-      <a href="https://t.me/monarchrise" target="_blank"><img src="assets/icons/telegram.svg" alt="Telegram" /></a>
-      <a href="https://instagram.com/krrishxtreme" target="_blank"><img src="assets/icons/instagram.svg" alt="Instagram" /></a>
-      <a href="https://youtube.com/@your_channel" target="_blank"><img src="assets/icons/youtube.svg" alt="YouTube" /></a>
-      <a href="https://twitter.com/your_profile" target="_blank"><img src="assets/icons/twitter.svg" alt="Twitter" /></a>
-      <a href="https://wa.me/your_number" target="_blank"><img src="assets/icons/whatsapp.svg" alt="WhatsApp" /></a>
+      <a href="https://t.me/monarchrise" target="_blank"><img src="assets/icons/telegram.svg" alt="Telegram"></a>
+      <a href="https://instagram.com/krrishxtreme" target="_blank"><img src="assets/icons/instagram.svg" alt="Instagram"></a>
+      <a href="https://youtube.com/@your_channel" target="_blank"><img src="assets/icons/youtube.svg" alt="YouTube"></a>
+      <a href="https://twitter.com/your_profile" target="_blank"><img src="assets/icons/x.svg" alt="X"></a>
+      <a href="https://wa.me/your_number" target="_blank"><img src="assets/icons/whatsapp.svg" alt="WhatsApp"></a>
     </div>
-<a href="https://krrishsarvan.github.io/techdominion-frontend/login.html" class="admin-footer-button">Admin Login</a>
-
-
-
+    <a href="https://krrishsarvan.github.io/techdominion-frontend/login.html" class="admin-footer-button">Admin Login</a>
     <p class="rights">© 2025 Tech Dominion. All rights reserved.</p>
   </footer>
 
-  <script src="js/script.js"></script>
-</body>
+  <!-- 🔷 JS to Inject Products & Notes -->
+  <script>
+    const softwareList = document.getElementById('software-list');
+    const courseList = document.getElementById('course-list');
+    const notesList = document.getElementById('notes-list');
 
+    fetch('/api/items')
+      .then(res => res.json())
+      .then(data => {
+        data.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <img src="${item.img}" class="product-img" alt="${item.name}" />
+            <h3>${item.name}</h3>
+            <p>${item.desc}</p>
+            <p class="price"><span class="original-price">${item.originalPrice}</span> ${item.price}</p>
+            <button onclick="window.open('https://t.me/monarchrise?text=Hi! I want to buy ${item.name}', '_blank')">Buy Now</button>
+          `;
+          (item.category === 'software' ? softwareList : courseList).appendChild(card);
+        });
+      });
+
+    fetch('/api/notes')
+      .then(res => res.json())
+      .then(data => {
+        data.forEach(note => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <h3>${note.title}</h3>
+            <button onclick="window.open('${note.url}', '_blank')">Download PDF</button>
+          `;
+          notesList.appendChild(card);
+        });
+      });
+
+   
+  </script>
+</body>
 </html>

@@ -1,66 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin Panel - Tech Dominion</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="stylesheet" href="css/admin.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .admin-panel {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 0 20px rgba(0,255,255,0.3);
+      max-width: 500px;
+      width: 100%;
+    }
+    .admin-panel h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: cyan;
+    }
+    .admin-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .admin-form input,
+    .admin-form textarea,
+    .admin-form select {
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    .admin-form textarea {
+      resize: vertical;
+    }
+    .admin-form button {
+      background: cyan;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .admin-form button:hover {
+      background: #00e0ff;
+    }
+    #msg {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: 600;
+    }
+    #popup {
+      display: none;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #00ffe7;
+      color: #000;
+      padding: 15px 25px;
+      border-radius: 8px;
+      font-weight: bold;
+      box-shadow: 0 0 20px #00ffe7;
+      z-index: 999;
+      transition: all 0.3s ease;
+    }
+  </style>
 </head>
-
-<body class="admin-body">
+<body>
   <div class="admin-panel">
-    <h2 class="admin-heading">Add New Product</h2>
+    <h2>Add New Item</h2>
     <form id="addForm" class="admin-form">
-      <input type="text" id="name" placeholder="Product Name" required />
-      <input type="text" id="price" placeholder="Discounted Price (e.g. ₹499)" required />
-      <input type="text" id="originalPrice" placeholder="Original Price (e.g. ₹4999)" required />
-      <input type="text" id="img" placeholder="Image Path (e.g. assets/images/i1.png)" required />
+      <input type="text" id="name" placeholder="Item Name" required />
+      <input type="text" id="price" placeholder="Discounted Price (₹)" />
+      <input type="text" id="originalPrice" placeholder="Original Price (₹)" />
+      <input type="text" id="img" placeholder="Image Path (e.g. assets/images/xyz.png)" />
+      <input type="text" id="link" placeholder="Link (for Notes/Projects)" />
       <select id="category" required>
-        <option value="">--Select Category--</option>
+        <option value="">-- Select Category --</option>
         <option value="software">Software</option>
         <option value="courses">Courses</option>
+        <option value="notes">Notes (PDF)</option>
+        <option value="projects">Projects</option>
       </select>
       <textarea id="desc" placeholder="Short Description" required></textarea>
-      <button type="submit">Add Product</button>
+      <button type="submit">Add</button>
     </form>
     <p id="msg"></p>
   </div>
 
+  <div id="popup">✅ Product Added!</div>
+
   <script>
     const form = document.getElementById('addForm');
     const msg = document.getElementById('msg');
+    const category = document.getElementById('category');
+    const price = document.getElementById('price');
+    const originalPrice = document.getElementById('originalPrice');
+    const img = document.getElementById('img');
+    const link = document.getElementById('link');
+
+    const updateFormFields = () => {
+      const cat = category.value;
+      price.style.display = 'block';
+      originalPrice.style.display = 'block';
+      img.style.display = 'block';
+      link.style.display = 'block';
+
+      if (cat === 'notes' || cat === 'projects') {
+        price.style.display = 'none';
+        originalPrice.style.display = 'none';
+        img.style.display = 'none';
+      }
+      if (cat === 'software' || cat === 'courses') {
+        link.style.display = 'none';
+      }
+    };
+
+    category.addEventListener('change', updateFormFields);
+    updateFormFields(); // initial setup
+
+    const showPopup = (text, color = '#00ffe7') => {
+      const popup = document.getElementById('popup');
+      popup.innerText = text;
+      popup.style.background = color;
+      popup.style.display = 'block';
+      setTimeout(() => popup.style.display = 'none', 3000);
+    };
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const cat = category.value;
 
-      const item = {
-        name: document.getElementById('name').value,
-        price: document.getElementById('price').value,
-        originalPrice: document.getElementById('originalPrice').value,
-        img: document.getElementById('img').value,
-        category: document.getElementById('category').value,
-        desc: document.getElementById('desc').value
+      let item = {
+        name: document.getElementById('name').value.trim(),
+        desc: document.getElementById('desc').value.trim(),
+        category: cat
       };
 
-const res = await fetch('https://techdominion-backend.onrender.com/api/items', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(item)
-});
+      if (cat === 'software' || cat === 'courses') {
+        item.price = price.value.trim();
+        item.originalPrice = originalPrice.value.trim();
+        item.img = img.value.trim();
+        const msgText = encodeURIComponent(`Hi! I want to buy ${item.name}`);
+        item.link = `https://t.me/monarchrise?text=${msgText}`;
+      } else if (cat === 'notes' || cat === 'projects') {
+        item.link = link.value.trim();
+      }
 
+      try {
+        const BASE_URL = location.hostname.includes('localhost')
+          ? 'http://localhost:3001'
+          : 'https://techdominion-backend.onrender.com';
 
-      if (res.ok) {
-        msg.innerText = '✅ Product added successfully!';
-        msg.style.color = 'limegreen';
+        const res = await fetch(`${BASE_URL}/api/items`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(item)
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Server error');
+
+        showPopup('✅ Successfully added!');
+        msg.innerText = '';
         form.reset();
-      } else {
-        msg.innerText = '❌ Failed to add product.';
-        msg.style.color = 'red';
+        updateFormFields();
+      } catch (err) {
+        showPopup('❌ Failed: ' + err.message, 'red');
+        console.error(err);
       }
     });
   </script>
 </body>
-
 </html>

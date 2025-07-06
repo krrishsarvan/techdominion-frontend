@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <mask id="x-cutout">
+      <!-- Full canvas white (visible) -->
+      <rect width="512" height="512" fill="white"></rect>
+      <!-- Transparent X path (cut out) -->
+      <path d="M362.7 150H328.6L261.6 238.6 188.6 150H149l113.3 126L149 362h35.1l69.5-91.4 78.6 91.4H374l-112.3-124L362.7 150z" fill="black"></path>
+    </mask>
+  </defs>
+
+  <!-- Transparent background outside the circle -->
+  <rect width="512" height="512" fill="none"></rect>
+
+  <!-- Black circle with X cutout using mask -->
+  <circle cx="256" cy="256" r="256" fill="black" mask="url(#x-cutout)"></circle>
+</svg>
