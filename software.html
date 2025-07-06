@@ -151,22 +151,23 @@
 <script>
   let allItems = [];
 
-  function loadCategoryItems() {
-    fetch('../api/items') // or your correct API route
-      .then(res => res.json())
-      .then(data => {
-        allItems = data;
-        const category = window.location.pathname.includes('software') ? 'software' : 'courses';
-        const filtered = allItems.filter(item => item.category === category);
-        displayItems(filtered);
+function loadCategoryItems() {
+  fetch('https://techdominion-backend.onrender.com/api/items') // ✅ use full backend URL
+    .then(res => res.json())
+    .then(data => {
+      allItems = data;
+      const category = window.location.pathname.includes('software') ? 'software' : 'courses';
+      const filtered = allItems.filter(item => item.category.toLowerCase() === category);
+      displayItems(filtered);
 
-        document.getElementById('searchInput').addEventListener('input', function () {
-          const keyword = this.value.toLowerCase();
-          const searched = filtered.filter(item => item.title.toLowerCase().includes(keyword));
-          displayItems(searched);
-        });
+      document.getElementById('searchInput').addEventListener('input', function () {
+        const keyword = this.value.toLowerCase();
+        const searched = filtered.filter(item => item.title.toLowerCase().includes(keyword));
+        displayItems(searched);
       });
-  }
+    });
+}
+
 
   function displayItems(items) {
     const containerId = window.location.pathname.includes('software') ? 'software-list' : 'course-list';

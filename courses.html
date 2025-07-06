@@ -9,7 +9,7 @@
     body {
       background: radial-gradient(ellipse at center, #0f111a 0%, #06080d 100%);
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: #00ffe7;;
+      color: #00ffe7;
       padding: 20px;
       animation: fadeIn 0.8s ease-in-out;
     }
@@ -64,8 +64,6 @@
     button:hover {
       background: #21867a;
     }
-
-    /* 🔷 Neon Back Button Style */
     a.back-home {
       display: inline-block;
       margin-top: 2rem;
@@ -78,12 +76,10 @@
       box-shadow: 0 0 12px rgba(0, 255, 231, 0.2);
       transition: all 0.3s ease;
     }
-
     a.back-home:hover {
       background: rgba(0, 255, 231, 0.08);
       box-shadow: 0 0 16px #00ffe7;
     }
-
     @keyframes fadeIn {
       from {
         opacity: 0;
@@ -94,7 +90,6 @@
         transform: translateY(0);
       }
     }
-
     @media screen and (max-width: 600px) {
       h1 {
         font-size: 2rem;
@@ -103,48 +98,89 @@
         font-size: 1rem;
       }
     }
-      .search-bar {
-  margin: 1rem auto;
-  padding: 0.7rem 1.2rem;
-  width: 90%;
-  max-width: 500px;
-  font-size: 1rem;
-  border-radius: 50px;
-  border: none;
-  outline: none;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(8px);
-  color: #fff;
-  box-shadow: 0 0 12px rgba(0, 255, 255, 0.2);
-  transition: 0.3s ease;
-}
-
-.search-bar::placeholder {
-  color: #ccc;
-}
-
-.search-bar:focus {
-  background: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 20px #00ffe7;
-}
-
+    .search-bar {
+      margin: 1rem auto;
+      padding: 0.7rem 1.2rem;
+      width: 90%;
+      max-width: 500px;
+      font-size: 1rem;
+      border-radius: 50px;
+      border: none;
+      outline: none;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.2);
+      transition: 0.3s ease;
+    }
+    .search-bar::placeholder {
+      color: #ccc;
+    }
+    .search-bar:focus {
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 20px #00ffe7;
+    }
   </style>
 </head>
-<body onload="loadItems()">
+
+<body onload="loadCategoryItems()">
   <h1>Top Skill-Boosting Courses</h1>
-  
-<div style="text-align:center;">
-  <input type="text" id="searchInput" class="search-bar" placeholder="Search here...">
-</div>
+
+  <div style="text-align:center;">
+    <input type="text" id="searchInput" class="search-bar" placeholder="Search here...">
+  </div>
 
   <div class="product-section" id="course-list">
-    <!-- Cards inserted by JS -->
+    <!-- JS will load courses here -->
   </div>
 
   <div style="text-align:center;">
     <a href="index.html" class="back-home">⬅ Back to Home</a>
   </div>
 
-  <script src="js/script.js"></script>
+  <script>
+    let allItems = [];
+
+    function loadCategoryItems() {
+      fetch('https://your-backend-url.onrender.com/api/items') // ✅ Use your correct Render backend URL
+        .then(res => res.json())
+        .then(data => {
+          allItems = data;
+          const category = "courses";
+          const filtered = allItems.filter(item => item.category.toLowerCase() === category);
+          displayItems(filtered);
+
+          document.getElementById('searchInput').addEventListener('input', function () {
+            const keyword = this.value.toLowerCase();
+            const searched = filtered.filter(item => item.title.toLowerCase().includes(keyword));
+            displayItems(searched);
+          });
+        });
+    }
+
+    function displayItems(items) {
+      const container = document.getElementById('course-list');
+      container.innerHTML = '';
+
+      if (items.length === 0) {
+        container.innerHTML = '<p style="text-align:center;">No items found.</p>';
+        return;
+      }
+
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        card.innerHTML = `
+          <img class="product-img" src="${item.image}" alt="${item.title}" />
+          <h3>${item.title}</h3>
+          <p>${item.description}</p>
+          <p><span class="original-price">₹${item.originalPrice}</span> <span class="price">₹${item.discountedPrice}</span></p>
+          <button onclick="window.open('${item.link}', '_blank')">Buy Now</button>
+        `;
+        container.appendChild(card);
+      });
+    }
+  </script>
 </body>
 </html>
