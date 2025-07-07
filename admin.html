@@ -82,7 +82,6 @@
       z-index: 999;
       transition: all 0.3s ease;
     }
-
     #adminSearch {
       width: 100%;
       padding: 10px;
@@ -117,7 +116,6 @@
     <h2 style="margin-top: 30px;">Manage Items</h2>
     <input type="text" id="adminSearch" placeholder="Search by name or description..."/>
     <div id="itemTableContainer" style="overflow-x:auto;"></div>
-
     <p id="msg"></p>
   </div>
 
@@ -151,7 +149,7 @@
     };
 
     category.addEventListener('change', updateFormFields);
-    updateFormFields(); // initial
+    updateFormFields();
 
     async function loadItems(searchText = '') {
       const BASE_URL = location.hostname.includes('localhost')
@@ -169,15 +167,14 @@
 
       const createTable = (title, items, category) => {
         if (items.length === 0) return '';
-        let rows = items.map((item, index) => `
+        let rows = items.map(item => `
           <tr>
             <td>${item.name}</td>
             <td>${item.description}</td>
             <td>${item.discountedPrice || '-'}</td>
             <td>${item.originalPrice || '-'}</td>
             <td>
-              <button onclick="editItem('${category}', ${index})">✏️</button>
-              <button onclick="deleteItem('${category}', ${index})">🗑️</button>
+              <button onclick="deleteItem('${item.name}')">🗑️</button>
             </td>
           </tr>
         `).join('');
@@ -205,73 +202,28 @@
     }
 
     loadItems();
-
     document.getElementById('adminSearch').addEventListener('input', function () {
       loadItems(this.value);
     });
 
-    async function deleteItem(category, index) {
-      if (!confirm("Are you sure you want to delete this item?")) return;
-
+    async function deleteItem(name) {
+      if (!confirm(`Are you sure you want to delete '${name}'?`)) return;
       const BASE_URL = location.hostname.includes('localhost')
         ? 'http://localhost:3001'
         : 'https://techdominion-backend.onrender.com';
 
-      const res = await fetch(`${BASE_URL}/api/${category}/${index}`, {
-        method: 'DELETE'
-      });
-
-      const data = await res.json();
-      showPopup(data.message || 'Deleted');
-      loadItems();
-    }
-
-    async function editItem(category, index) {
-      const BASE_URL = location.hostname.includes('localhost')
-        ? 'http://localhost:3001'
-        : 'https://techdominion-backend.onrender.com';
-
-      const res = await fetch(`${BASE_URL}/api/all`);
-      const all = await res.json();
-      const current = all[category][index];
-
-      document.getElementById('name').value = current.name;
-      document.getElementById('desc').value = current.description;
-      document.getElementById('price').value = current.discountedPrice || '';
-      document.getElementById('originalPrice').value = current.originalPrice || '';
-      document.getElementById('img').value = current.image || '';
-      document.getElementById('link').value = current.link || '';
-      document.getElementById('category').value = current.category;
-      updateFormFields();
-
-      form.onsubmit = async (e) => {
-        e.preventDefault();
-        const updated = {
-          name: document.getElementById('name').value.trim(),
-          description: document.getElementById('desc').value.trim(),
-          image: document.getElementById('img').value.trim(),
-          discountedPrice: document.getElementById('price').value.trim(),
-          originalPrice: document.getElementById('originalPrice').value.trim(),
-          link: document.getElementById('link').value.trim(),
-          category: document.getElementById('category').value
-        };
-
-        const res = await fetch(`${BASE_URL}/api/${category}/${index}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updated)
+      try {
+        const res = await fetch(`${BASE_URL}/api/delete-by-name/${encodeURIComponent(name)}`, {
+          method: 'DELETE'
         });
-
-        const result = await res.json();
-        showPopup(result.message || 'Updated!');
-        form.reset();
-        updateFormFields();
-        form.onsubmit = defaultAddSubmit;
+        const data = await res.json();
+        showPopup(data.message || 'Deleted!');
         loadItems();
-      };
+      } catch (err) {
+        showPopup('❌ Error deleting item', 'red');
+        console.error(err);
+      }
     }
-
-    const defaultAddSubmit = form.onsubmit;
 
     const showPopup = (text, color = '#00ffe7') => {
       const popup = document.getElementById('popup');
@@ -281,10 +233,10 @@
       setTimeout(() => popup.style.display = 'none', 3000);
     };
 
+    const defaultAddSubmit = form.onsubmit;
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const cat = category.value;
-
       let item = {
         name: document.getElementById('name').value.trim(),
         description: document.getElementById('desc').value.trim(),
