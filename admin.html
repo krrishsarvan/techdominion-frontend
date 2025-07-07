@@ -102,6 +102,11 @@
       <textarea id="desc" placeholder="Short Description" required></textarea>
       <button type="submit">Add</button>
     </form>
+
+<h2 style="margin-top: 30px;">Manage Items</h2>
+<div id="itemTableContainer" style="overflow-x:auto;"></div>
+
+
     <p id="msg"></p>
   </div>
 
@@ -135,6 +140,137 @@
 
     category.addEventListener('change', updateFormFields);
     updateFormFields(); // initial setup
+
+    const itemTableContainer = document.getElementById('itemTableContainer');
+
+// 🔁 Load and display all items
+async function loadItems() {
+  const BASE_URL = location.hostname.includes('localhost')
+    ? 'http://localhost:3001'
+    : 'https://techdominion-backend.onrender.com';
+
+  const res = await fetch(`${BASE_URL}/api/all`);
+  const data = await res.json();
+
+  const createTable = (title, items, category) => {
+    if (items.length === 0) return '';
+    let rows = items.map((item, index) => `
+      <tr>
+        <td>${item.name}</td>
+        <td>${item.description}</td>
+        <td>${item.discountedPrice || '-'}</td>
+        <td>${item.originalPrice || '-'}</td>
+        <td>
+          <button onclick="editItem('${category}', ${index})">✏️</button>
+          <button onclick="deleteItem('${category}', ${index})">🗑️</button>
+        </td>
+      </tr>
+    `).join('');
+
+    return `
+      <h3>${title}</h3>
+      <table border="1" cellpadding="10" cellspacing="0" style="width:100%; margin-bottom:20px; background:white; color:black; border-radius:8px;">
+        <tr style="background:#eee">
+          <th>Name</th>
+          <th>Description</th>
+          <th>Price</th>
+          <th>Original</th>
+          <th>Actions</th>
+        </tr>
+        ${rows}
+      </table>
+    `;
+  };
+
+  const tableHTML = `
+    ${createTable("Software & Courses", data.items, 'items')}
+    ${createTable("Notes", data.notes, 'notes')}
+    ${createTable("Projects", data.projects, 'projects')}
+  `;
+
+  itemTableContainer.innerHTML = tableHTML;
+}
+
+loadItems();
+
+// 🗑️ Delete item
+async function deleteItem(category, index) {
+  if (!confirm("Are you sure you want to delete this item?")) return;
+
+  const BASE_URL = location.hostname.includes('localhost')
+    ? 'http://localhost:3001'
+    : 'https://techdominion-backend.onrender.com';
+
+  const res = await fetch(`${BASE_URL}/api/${category}/${index}`, {
+    method: 'DELETE'
+  });
+
+  const data = await res.json();
+  showPopup(data.message || 'Deleted');
+  loadItems();
+}
+
+// ✏️ Edit item
+async function editItem(category, index) {
+  const BASE_URL = location.hostname.includes('localhost')
+    ? 'http://localhost:3001'
+    : 'https://techdominion-backend.onrender.com';
+
+  const res = await fetch(`${BASE_URL}/api/all`);
+  const all = await res.json();
+  const current = all[category][index];
+
+  // Pre-fill the form
+  document.getElementById('name').value = current.name;
+  document.getElementById('desc').value = current.description;
+  document.getElementById('price').value = current.discountedPrice || '';
+  document.getElementById('originalPrice').value = current.originalPrice || '';
+  document.getElementById('img').value = current.image || '';
+  document.getElementById('link').value = current.link || '';
+  document.getElementById('category').value = current.category;
+  updateFormFields();
+
+  // Change submit behavior to UPDATE
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const updated = {
+      name: document.getElementById('name').value.trim(),
+      desc: document.getElementById('desc').value.trim(),
+      img: document.getElementById('img').value.trim(),
+      price: document.getElementById('price').value.trim(),
+      originalPrice: document.getElementById('originalPrice').value.trim(),
+      link: document.getElementById('link').value.trim(),
+      category: document.getElementById('category').value
+    };
+
+    const item = {
+      name: updated.name,
+      description: updated.desc,
+      image: updated.img,
+      discountedPrice: updated.price,
+      originalPrice: updated.originalPrice,
+      link: updated.link,
+      category: updated.category
+    };
+
+    const res = await fetch(`${BASE_URL}/api/${category}/${index}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item)
+    });
+
+    const result = await res.json();
+    showPopup(result.message || 'Updated!');
+    form.reset();
+    updateFormFields();
+    form.onsubmit = defaultAddSubmit; // Restore original
+    loadItems();
+  };
+}
+
+// 🔁 Preserve original submit
+const defaultAddSubmit = form.onsubmit;
+
 
     const showPopup = (text, color = '#00ffe7') => {
       const popup = document.getElementById('popup');
