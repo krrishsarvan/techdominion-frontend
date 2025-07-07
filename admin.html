@@ -17,15 +17,16 @@
       color: #fff;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
       min-height: 100vh;
+      padding: 40px 20px;
     }
     .admin-panel {
       background: rgba(255, 255, 255, 0.05);
       padding: 30px;
       border-radius: 16px;
       box-shadow: 0 0 20px rgba(0,255,255,0.3);
-      max-width: 500px;
+      max-width: 700px;
       width: 100%;
     }
     .admin-panel h2 {
@@ -81,6 +82,16 @@
       z-index: 999;
       transition: all 0.3s ease;
     }
+
+    #adminSearch {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 16px;
+      border: none;
+      margin-bottom: 20px;
+      box-shadow: 0 0 10px rgba(0,255,255,0.2);
+    }
   </style>
 </head>
 <body>
@@ -104,6 +115,7 @@
     </form>
 
     <h2 style="margin-top: 30px;">Manage Items</h2>
+    <input type="text" id="adminSearch" placeholder="Search by name or description..."/>
     <div id="itemTableContainer" style="overflow-x:auto;"></div>
 
     <p id="msg"></p>
@@ -119,6 +131,7 @@
     const originalPrice = document.getElementById('originalPrice');
     const img = document.getElementById('img');
     const link = document.getElementById('link');
+    const itemTableContainer = document.getElementById('itemTableContainer');
 
     const updateFormFields = () => {
       const cat = category.value;
@@ -138,45 +151,33 @@
     };
 
     category.addEventListener('change', updateFormFields);
-    updateFormFields();
+    updateFormFields(); // initial
 
-    const itemTableContainer = document.getElementById('itemTableContainer');
-
-    async function loadItems() {
+    async function loadItems(searchText = '') {
       const BASE_URL = location.hostname.includes('localhost')
         ? 'http://localhost:3001'
         : 'https://techdominion-backend.onrender.com';
 
       const res = await fetch(`${BASE_URL}/api/all`);
-      const data = await res.json();
+      const all = await res.json();
 
-      const itemsGrouped = {
-        items: [],
-        notes: [],
-        projects: []
-      };
-
-      data.forEach(item => {
-        if (item.category === 'software' || item.category === 'courses') {
-          itemsGrouped.items.push(item);
-        } else if (item.category === 'notes') {
-          itemsGrouped.notes.push(item);
-        } else if (item.category === 'projects') {
-          itemsGrouped.projects.push(item);
-        }
-      });
+      const filterItems = (list) =>
+        list.filter(item =>
+          item.name.toLowerCase().includes(searchText.toLowerCase()) ||
+          item.description.toLowerCase().includes(searchText.toLowerCase())
+        );
 
       const createTable = (title, items, category) => {
         if (items.length === 0) return '';
         let rows = items.map((item, index) => `
           <tr>
-            <td>${item.name || 'Unnamed'}</td>
-            <td>${item.description || item.desc || '-'}</td>
+            <td>${item.name}</td>
+            <td>${item.description}</td>
             <td>${item.discountedPrice || '-'}</td>
             <td>${item.originalPrice || '-'}</td>
             <td>
-              <button onclick="editItem('${item._id}', '${category}')">✏️</button>
-              <button onclick="deleteItem('${item._id}', '${category}')">🗑️</button>
+              <button onclick="editItem('${category}', ${index})">✏️</button>
+              <button onclick="deleteItem('${category}', ${index})">🗑️</button>
             </td>
           </tr>
         `).join('');
@@ -196,16 +197,81 @@
         `;
       };
 
-      const tableHTML = `
-        ${createTable("Software & Courses", itemsGrouped.items, 'items')}
-        ${createTable("Notes", itemsGrouped.notes, 'notes')}
-        ${createTable("Projects", itemsGrouped.projects, 'projects')}
+      itemTableContainer.innerHTML = `
+        ${createTable("Software & Courses", filterItems(all.items), 'items')}
+        ${createTable("Notes", filterItems(all.notes), 'notes')}
+        ${createTable("Projects", filterItems(all.projects), 'projects')}
       `;
-
-      itemTableContainer.innerHTML = tableHTML;
     }
 
     loadItems();
+
+    document.getElementById('adminSearch').addEventListener('input', function () {
+      loadItems(this.value);
+    });
+
+    async function deleteItem(category, index) {
+      if (!confirm("Are you sure you want to delete this item?")) return;
+
+      const BASE_URL = location.hostname.includes('localhost')
+        ? 'http://localhost:3001'
+        : 'https://techdominion-backend.onrender.com';
+
+      const res = await fetch(`${BASE_URL}/api/${category}/${index}`, {
+        method: 'DELETE'
+      });
+
+      const data = await res.json();
+      showPopup(data.message || 'Deleted');
+      loadItems();
+    }
+
+    async function editItem(category, index) {
+      const BASE_URL = location.hostname.includes('localhost')
+        ? 'http://localhost:3001'
+        : 'https://techdominion-backend.onrender.com';
+
+      const res = await fetch(`${BASE_URL}/api/all`);
+      const all = await res.json();
+      const current = all[category][index];
+
+      document.getElementById('name').value = current.name;
+      document.getElementById('desc').value = current.description;
+      document.getElementById('price').value = current.discountedPrice || '';
+      document.getElementById('originalPrice').value = current.originalPrice || '';
+      document.getElementById('img').value = current.image || '';
+      document.getElementById('link').value = current.link || '';
+      document.getElementById('category').value = current.category;
+      updateFormFields();
+
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        const updated = {
+          name: document.getElementById('name').value.trim(),
+          description: document.getElementById('desc').value.trim(),
+          image: document.getElementById('img').value.trim(),
+          discountedPrice: document.getElementById('price').value.trim(),
+          originalPrice: document.getElementById('originalPrice').value.trim(),
+          link: document.getElementById('link').value.trim(),
+          category: document.getElementById('category').value
+        };
+
+        const res = await fetch(`${BASE_URL}/api/${category}/${index}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated)
+        });
+
+        const result = await res.json();
+        showPopup(result.message || 'Updated!');
+        form.reset();
+        updateFormFields();
+        form.onsubmit = defaultAddSubmit;
+        loadItems();
+      };
+    }
+
+    const defaultAddSubmit = form.onsubmit;
 
     const showPopup = (text, color = '#00ffe7') => {
       const popup = document.getElementById('popup');
@@ -220,20 +286,15 @@
       const cat = category.value;
 
       let item = {
-  name: document.getElementById('name').value.trim(),
-  description: document.getElementById('desc').value.trim(),
-  image: document.getElementById('img').value.trim(),
-  originalPrice: document.getElementById('originalPrice').value.trim(),
-  discountedPrice: document.getElementById('price').value.trim(),
-  link: document.getElementById('link').value.trim(),
-  category: document.getElementById('category').value
-};
-
+        name: document.getElementById('name').value.trim(),
+        description: document.getElementById('desc').value.trim(),
+        category: cat
+      };
 
       if (cat === 'software' || cat === 'courses') {
-        item.price = price.value.trim();
+        item.discountedPrice = price.value.trim();
         item.originalPrice = originalPrice.value.trim();
-        item.img = img.value.trim();
+        item.image = img.value.trim();
         const msgText = encodeURIComponent(`Hi! I want to buy ${item.name}`);
         item.link = `https://t.me/monarchrise?text=${msgText}`;
       } else if (cat === 'notes' || cat === 'projects') {

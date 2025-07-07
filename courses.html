@@ -142,7 +142,7 @@
     let allItems = [];
 
     function loadCategoryItems() {
-      fetch('https://your-backend-url.onrender.com/api/items') // ✅ Use your correct Render backend URL
+      fetch('https://techdominion-backend.onrender.com/api/items')
         .then(res => res.json())
         .then(data => {
           allItems = data;
@@ -152,7 +152,7 @@
 
           document.getElementById('searchInput').addEventListener('input', function () {
             const keyword = this.value.toLowerCase();
-            const searched = filtered.filter(item => item.title.toLowerCase().includes(keyword));
+            const searched = filtered.filter(item => item.name.toLowerCase().includes(keyword));
             displayItems(searched);
           });
         });
@@ -172,8 +172,8 @@
         card.className = 'card';
 
         card.innerHTML = `
-          <img class="product-img" src="${item.image}" alt="${item.title}" />
-          <h3>${item.title}</h3>
+          <img class="product-img" src="${item.image}" alt="${item.name}" />
+          <h3>${item.name}</h3>
           <p>${item.description}</p>
           <p><span class="original-price">₹${item.originalPrice}</span> <span class="price">₹${item.discountedPrice}</span></p>
           <button onclick="window.open('${item.link}', '_blank')">Buy Now</button>
