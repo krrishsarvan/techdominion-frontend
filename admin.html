@@ -76,15 +76,6 @@
       z-index: 999;
       transition: all 0.3s ease;
     }
-    #adminSearch {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      font-size: 16px;
-      border: none;
-      margin-bottom: 20px;
-      box-shadow: 0 0 10px rgba(0,255,255,0.2);
-    }
   </style>
 </head>
 <body>
@@ -108,7 +99,7 @@
     </form>
 
     <h2 style="margin-top: 30px;">Manage Items</h2>
-    <input type="text" id="adminSearch" placeholder="Search by name or description..."/>
+
     <div id="itemTableContainer" style="overflow-x:auto;"></div>
     <p id="msg"></p>
   </div>
@@ -117,7 +108,6 @@
 
   <script>
     const form = document.getElementById('addForm');
-    const msg = document.getElementById('msg');
     const category = document.getElementById('category');
     const price = document.getElementById('price');
     const originalPrice = document.getElementById('originalPrice');
@@ -125,7 +115,7 @@
     const link = document.getElementById('link');
     const itemTableContainer = document.getElementById('itemTableContainer');
 
-    const updateFormFields = () => {
+    function updateFormFields() {
       const cat = category.value;
       price.style.display = 'block';
       originalPrice.style.display = 'block';
@@ -140,96 +130,158 @@
       if (cat === 'software' || cat === 'courses') {
         link.style.display = 'none';
       }
-    };
+    }
 
     category.addEventListener('change', updateFormFields);
     updateFormFields();
 
-    let allItems = { items: [], notes: [], projects: [] };
+    let allItems = {
+      items: [],
+      notes: [],
+      projects: []
+    };
 
     async function fetchItemsFromServer() {
       const BASE_URL = location.hostname.includes('localhost')
         ? 'http://localhost:3001'
         : 'https://techdominion-backend.onrender.com';
-      const res = await fetch(`${BASE_URL}/api/all`);
-      allItems = await res.json();
-      renderItems(); // show all
+
+      try {
+        const res = await fetch(`${BASE_URL}/api/all`);
+        const allData = await res.json();
+
+        allItems = {
+          items: allData.filter(i => i.category === 'software' || i.category === 'courses'),
+          notes: allData.filter(i => i.category === 'notes'),
+          projects: allData.filter(i => i.category === 'projects')
+        };
+
+        renderItems();
+      } catch (err) {
+        itemTableContainer.innerHTML = `<p style="color:red;">Error loading items</p>`;
+        console.error(err);
+      }
     }
 
-    const renderItems = (searchText = '') => {
-      const filterItems = (list) =>
-        list.filter(item =>
-          (item.name || '').toLowerCase().includes(searchText.toLowerCase()) ||
-          (item.description || '').toLowerCase().includes(searchText.toLowerCase())
-        );
-
+    function renderItems() {
       const createTable = (title, items) => {
         if (items.length === 0) return '';
+
         const rows = items.map(item => `
           <tr>
             <td>${item.name}</td>
             <td>${item.description || ''}</td>
-            <td>${item.discountedPrice || '-'}</td>
-            <td>${item.originalPrice || '-'}</td>
-            <td><button onclick="deleteItem('${item.name}')">🗑️</button></td>
+            <td>${item.discountedPrice ?? '-'}</td>
+            <td>${item.originalPrice ?? '-'}</td>
+            <td>
+              <button onclick="editItem('${item._id}')">✏️ Edit</button>
+              <button onclick="deleteItem('${item._id}', '${item.name.replace(/'/g, "\\'")}')">🗑️ Delete</button>
+            </td>
           </tr>
         `).join('');
 
         return `
           <h3>${title}</h3>
           <table border="1" cellpadding="10" cellspacing="0" style="width:100%; margin-bottom:20px; background:white; color:black; border-radius:8px;">
-            <tr style="background:#eee">
-              <th>Name</th>
-              <th>Description</th>
-              <th>Price</th>
-              <th>Original</th>
-              <th>Actions</th>
-            </tr>
-            ${rows}
+            <thead style="background:#eee;">
+              <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Original</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
           </table>
         `;
       };
 
       itemTableContainer.innerHTML = `
-        ${createTable("Software & Courses", filterItems(allItems.items))}
-        ${createTable("Notes", filterItems(allItems.notes))}
-        ${createTable("Projects", filterItems(allItems.projects))}
+        ${createTable("Software & Courses", allItems.items)}
+        ${createTable("Notes", allItems.notes)}
+        ${createTable("Projects", allItems.projects)}
       `;
-    };
+    }
 
-    document.getElementById('adminSearch').addEventListener('input', function () {
-      renderItems(this.value);
-    });
-
-    async function deleteItem(name) {
+    async function deleteItem(id, name) {
       if (!confirm(`Are you sure you want to delete '${name}'?`)) return;
+
       const BASE_URL = location.hostname.includes('localhost')
         ? 'http://localhost:3001'
         : 'https://techdominion-backend.onrender.com';
 
       try {
-        const res = await fetch(`${BASE_URL}/api/delete-by-name/${encodeURIComponent(name)}`, {
-          method: 'DELETE'
-        });
+        const res = await fetch(`${BASE_URL}/api/${id}`, { method: 'DELETE' });
         const data = await res.json();
-        showPopup(data.message || 'Deleted!');
+
+        alert(data.message || 'Deleted!');
         fetchItemsFromServer();
       } catch (err) {
-        showPopup('❌ Error deleting item', 'red');
+        alert('Error deleting item');
         console.error(err);
       }
     }
 
-    const showPopup = (text, color = '#00ffe7') => {
-      const popup = document.getElementById('popup');
-      popup.innerText = text;
-      popup.style.background = color;
-      popup.style.display = 'block';
-      setTimeout(() => popup.style.display = 'none', 3000);
-    };
+    async function editItem(id) {
+      const BASE_URL = location.hostname.includes('localhost')
+        ? 'http://localhost:3001'
+        : 'https://techdominion-backend.onrender.com';
 
-    form.addEventListener('submit', async (e) => {
+      try {
+        const res = await fetch(`${BASE_URL}/api/${id}`);
+        if (!res.ok) throw new Error('Item not found');
+        const item = await res.json();
+
+        document.getElementById('name').value = item.name || '';
+        document.getElementById('desc').value = item.description || '';
+        document.getElementById('category').value = item.category || '';
+        document.getElementById('price').value = item.discountedPrice || '';
+        document.getElementById('originalPrice').value = item.originalPrice || '';
+        document.getElementById('img').value = item.image || '';
+        document.getElementById('link').value = item.link || '';
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        form.removeEventListener('submit', addItemSubmitHandler);
+        form.addEventListener('submit', updateItemSubmitHandler);
+
+        form.dataset.editingId = id;
+
+        alert('Edit the fields and click Add (which will now update)');
+        updateFormFields();
+      } catch (err) {
+        alert('Error loading item for edit');
+        console.error(err);
+      }
+    }
+
+    async function addItemSubmitHandler(e) {
       e.preventDefault();
+      await saveItem('POST');
+    }
+
+    async function updateItemSubmitHandler(e) {
+      e.preventDefault();
+
+      const id = form.dataset.editingId;
+      if (!id) {
+        alert('No item selected for update');
+        return;
+      }
+
+      await saveItem('PUT', id);
+
+      form.removeEventListener('submit', updateItemSubmitHandler);
+      form.addEventListener('submit', addItemSubmitHandler);
+      delete form.dataset.editingId;
+    }
+
+    async function saveItem(method, id) {
+      const BASE_URL = location.hostname.includes('localhost')
+        ? 'http://localhost:3001'
+        : 'https://techdominion-backend.onrender.com';
+
       const cat = category.value;
       let item = {
         name: document.getElementById('name').value.trim(),
@@ -248,12 +300,9 @@
       }
 
       try {
-        const BASE_URL = location.hostname.includes('localhost')
-          ? 'http://localhost:3001'
-          : 'https://techdominion-backend.onrender.com';
-
-        const res = await fetch(`${BASE_URL}/api/items`, {
-          method: 'POST',
+        const url = method === 'PUT' ? `${BASE_URL}/api/${id}` : `${BASE_URL}/api/items`;
+        const res = await fetch(url, {
+          method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(item)
         });
@@ -261,18 +310,19 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Server error');
 
-        showPopup('✅ Successfully added!');
-        msg.innerText = '';
+        alert(method === 'POST' ? 'Item added successfully!' : 'Item updated successfully!');
         form.reset();
-        updateFormFields();
         fetchItemsFromServer();
+        updateFormFields();
       } catch (err) {
-        showPopup('❌ Failed: ' + err.message, 'red');
+        alert('Failed: ' + err.message);
         console.error(err);
       }
-    });
+    }
 
-    fetchItemsFromServer(); // 🔃 On load
+    form.addEventListener('submit', addItemSubmitHandler);
+
+    fetchItemsFromServer();
   </script>
 </body>
 </html>
