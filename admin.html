@@ -6,9 +6,7 @@
   <title>Admin Panel - Tech Dominion</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       padding: 0;
@@ -47,9 +45,7 @@
       border-radius: 8px;
       font-size: 16px;
     }
-    .admin-form textarea {
-      resize: vertical;
-    }
+    .admin-form textarea { resize: vertical; }
     .admin-form button {
       background: cyan;
       border: none;
@@ -60,9 +56,7 @@
       cursor: pointer;
       transition: 0.3s;
     }
-    .admin-form button:hover {
-      background: #00e0ff;
-    }
+    .admin-form button:hover { background: #00e0ff; }
     #msg {
       text-align: center;
       margin-top: 10px;
@@ -151,31 +145,33 @@
     category.addEventListener('change', updateFormFields);
     updateFormFields();
 
-    async function loadItems(searchText = '') {
+    let allItems = { items: [], notes: [], projects: [] };
+
+    async function fetchItemsFromServer() {
       const BASE_URL = location.hostname.includes('localhost')
         ? 'http://localhost:3001'
         : 'https://techdominion-backend.onrender.com';
-
       const res = await fetch(`${BASE_URL}/api/all`);
-      const all = await res.json();
+      allItems = await res.json();
+      renderItems(); // show all
+    }
 
+    const renderItems = (searchText = '') => {
       const filterItems = (list) =>
         list.filter(item =>
-          item.name.toLowerCase().includes(searchText.toLowerCase()) ||
-          item.description.toLowerCase().includes(searchText.toLowerCase())
+          (item.name || '').toLowerCase().includes(searchText.toLowerCase()) ||
+          (item.description || '').toLowerCase().includes(searchText.toLowerCase())
         );
 
-      const createTable = (title, items, category) => {
+      const createTable = (title, items) => {
         if (items.length === 0) return '';
-        let rows = items.map(item => `
+        const rows = items.map(item => `
           <tr>
             <td>${item.name}</td>
-            <td>${item.description}</td>
+            <td>${item.description || ''}</td>
             <td>${item.discountedPrice || '-'}</td>
             <td>${item.originalPrice || '-'}</td>
-            <td>
-              <button onclick="deleteItem('${item.name}')">🗑️</button>
-            </td>
+            <td><button onclick="deleteItem('${item.name}')">🗑️</button></td>
           </tr>
         `).join('');
 
@@ -195,15 +191,14 @@
       };
 
       itemTableContainer.innerHTML = `
-        ${createTable("Software & Courses", filterItems(all.items), 'items')}
-        ${createTable("Notes", filterItems(all.notes), 'notes')}
-        ${createTable("Projects", filterItems(all.projects), 'projects')}
+        ${createTable("Software & Courses", filterItems(allItems.items))}
+        ${createTable("Notes", filterItems(allItems.notes))}
+        ${createTable("Projects", filterItems(allItems.projects))}
       `;
-    }
+    };
 
-    loadItems();
     document.getElementById('adminSearch').addEventListener('input', function () {
-      loadItems(this.value);
+      renderItems(this.value);
     });
 
     async function deleteItem(name) {
@@ -218,7 +213,7 @@
         });
         const data = await res.json();
         showPopup(data.message || 'Deleted!');
-        loadItems();
+        fetchItemsFromServer();
       } catch (err) {
         showPopup('❌ Error deleting item', 'red');
         console.error(err);
@@ -233,7 +228,6 @@
       setTimeout(() => popup.style.display = 'none', 3000);
     };
 
-    const defaultAddSubmit = form.onsubmit;
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const cat = category.value;
@@ -271,12 +265,14 @@
         msg.innerText = '';
         form.reset();
         updateFormFields();
-        loadItems();
+        fetchItemsFromServer();
       } catch (err) {
         showPopup('❌ Failed: ' + err.message, 'red');
         console.error(err);
       }
     });
+
+    fetchItemsFromServer(); // 🔃 On load
   </script>
 </body>
 </html>
