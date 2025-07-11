@@ -222,7 +222,28 @@
         console.error(err);
       }
     }
+    async function addItemSubmitHandler(e) {
+      e.preventDefault();
+      await saveItem('POST');
+    }
 
+    async function updateItemSubmitHandler(e) {
+      e.preventDefault();
+
+      const id = form.dataset.editingId;
+      if (!id) {
+        alert('No item selected for update');
+        return;
+        form.querySelector('button[type="submit"]').textContent = 'Add';
+
+      }
+
+      await saveItem('PUT', id);
+
+      form.removeEventListener('submit', updateItemSubmitHandler);
+      form.addEventListener('submit', addItemSubmitHandler);
+      delete form.dataset.editingId;
+    }
     async function editItem(id) {
       const BASE_URL = location.hostname.includes('localhost')
         ? 'http://localhost:3001'
@@ -254,28 +275,11 @@
         alert('Error loading item for edit');
         console.error(err);
       }
+      form.querySelector('button[type="submit"]').textContent = 'Update';
+
     }
 
-    async function addItemSubmitHandler(e) {
-      e.preventDefault();
-      await saveItem('POST');
-    }
 
-    async function updateItemSubmitHandler(e) {
-      e.preventDefault();
-
-      const id = form.dataset.editingId;
-      if (!id) {
-        alert('No item selected for update');
-        return;
-      }
-
-      await saveItem('PUT', id);
-
-      form.removeEventListener('submit', updateItemSubmitHandler);
-      form.addEventListener('submit', addItemSubmitHandler);
-      delete form.dataset.editingId;
-    }
 
     async function saveItem(method, id) {
       const BASE_URL = location.hostname.includes('localhost')
