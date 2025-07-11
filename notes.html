@@ -13,27 +13,39 @@
       padding: 0;
       color: #fff;
     }
-
     header {
       text-align: center;
       padding: 2rem 1rem 1rem;
     }
-
     header h1 {
       font-size: 2rem;
       color: #00ffe7;
       text-shadow: 0 0 10px #00ffe7;
     }
-
+    .search-container {
+      display: flex;
+      justify-content: center;
+      margin: 1rem auto 2rem;
+    }
+    .search-container input {
+      width: 70%;
+      max-width: 500px;
+      padding: 0.8rem 1.2rem;
+      border-radius: 12px;
+      border: none;
+      background: rgba(255, 255, 255, 0.08);
+      color: white;
+      font-size: 1rem;
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.2);
+    }
     .notes-container {
       max-width: 900px;
-      margin: 2rem auto;
+      margin: 0 auto;
       padding: 1rem;
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
     }
-
     .note-box {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -43,23 +55,19 @@
       box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
       transition: all 0.3s ease;
     }
-
     .note-box:hover {
       box-shadow: 0 0 25px rgba(0, 255, 255, 0.3);
     }
-
     .note-box h3 {
       font-size: 1.3rem;
       color: #00ffe7;
       margin-bottom: 0.5rem;
     }
-
     .note-box p {
       font-size: 0.95rem;
       margin-bottom: 1rem;
       color: #ddd;
     }
-
     .note-box button {
       background-color: #00ffe7;
       color: #0f0c29;
@@ -71,7 +79,6 @@
       font-size: 0.95rem;
       transition: background 0.3s ease;
     }
-
     .note-box button:hover {
       background-color: #00cccc;
     }
@@ -81,29 +88,66 @@
   <header>
     <h1>📘 Free Notes</h1>
   </header>
+  
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Search notes...">
+  </div>
 
   <section class="notes-container" id="note-list">
-    <!-- Notes will be injected here -->
+    <p style="text-align:center; color:#888;">Loading notes...</p>
   </section>
 
   <script>
-    fetch('https://techdominion-backend.onrender.com/api/items')
+    let allNotes = [];
+    const container = document.getElementById('note-list');
+    const searchInput = document.getElementById('searchInput');
+
+    // 1. Fetch items and log for debugging
+    fetch('https://techdominion-backend.onrender.com/api/all')
       .then(res => res.json())
       .then(data => {
-        const notes = data.filter(item => item.category === 'notes');
-        const container = document.getElementById('note-list');
-
-        notes.forEach(note => {
-          const box = document.createElement('div');
-          box.className = 'note-box';
-          box.innerHTML = `
-            <h3>${note.name}</h3>
-            <p>${note.description}</p>
-            <button onclick="window.open('${note.link}', '_blank')">📥 Download</button>
-          `;
-          container.appendChild(box);
+        console.log('Fetched items:', data);
+        allNotes = data.filter(item => {
+          const cat = item.category || '';
+          return cat.trim().toLowerCase() === 'notes';
         });
+        console.log('Filtered notes items:', allNotes);
+
+        renderNotes(allNotes);
+      })
+      .catch(err => {
+        console.error('Fetch error:', err);
+        container.innerHTML = "<p style='text-align:center; color:red;'>Failed to load notes.</p>";
       });
+
+    // 2. Render list
+    function renderNotes(notes) { 
+      container.innerHTML = '';
+      if (notes.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#ccc;">No notes available right now.</p>';
+        return;
+      }
+      notes.forEach(note => {
+        const box = document.createElement('div');
+        box.className = 'note-box';
+        box.innerHTML = `
+          <h3>${note.name}</h3>
+          <p>${note.description}</p>
+          <button onclick="window.open('${note.link}', '_blank')">📥 Download</button>
+        `;
+        container.appendChild(box);
+      });
+    }
+
+    // 3. Search functionality
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.trim().toLowerCase();
+      const filtered = allNotes.filter(n =>
+        (n.name || '').toLowerCase().includes(q) ||
+        (n.description || '').toLowerCase().includes(q)
+      );
+      renderNotes(filtered);
+    });
   </script>
 </body>
 </html>

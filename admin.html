@@ -57,11 +57,6 @@
       transition: 0.3s;
     }
     .admin-form button:hover { background: #00e0ff; }
-    #msg {
-      text-align: center;
-      margin-top: 10px;
-      font-weight: 600;
-    }
     #popup {
       display: none;
       position: fixed;
@@ -99,9 +94,7 @@
     </form>
 
     <h2 style="margin-top: 30px;">Manage Items</h2>
-
     <div id="itemTableContainer" style="overflow-x:auto;"></div>
-    <p id="msg"></p>
   </div>
 
   <div id="popup">✅ Product Added!</div>
@@ -133,13 +126,8 @@
     }
 
     category.addEventListener('change', updateFormFields);
-    updateFormFields();
 
-    let allItems = {
-      items: [],
-      notes: [],
-      projects: []
-    };
+    let allItems = { items: [], notes: [], projects: [] };
 
     async function fetchItemsFromServer() {
       const BASE_URL = location.hostname.includes('localhost')
@@ -148,6 +136,7 @@
 
       try {
         const res = await fetch(`${BASE_URL}/api/all`);
+        if (!res.ok) throw new Error('Failed to fetch items');
         const allData = await res.json();
 
         allItems = {
@@ -174,8 +163,8 @@
             <td>${item.discountedPrice ?? '-'}</td>
             <td>${item.originalPrice ?? '-'}</td>
             <td>
-              <button onclick="editItem('${item._id}')">✏️ Edit</button>
-              <button onclick="deleteItem('${item._id}', '${item.name.replace(/'/g, "\\'")}')">🗑️ Delete</button>
+              <button onclick="editItem('${encodeURIComponent(item.name)}')">✏️ Edit</button>
+              <button onclick="deleteItem('${encodeURIComponent(item.name)}')">🗑️ Delete</button>
             </td>
           </tr>
         `).join('');
@@ -204,17 +193,20 @@
       `;
     }
 
-    async function deleteItem(id, name) {
-      if (!confirm(`Are you sure you want to delete '${name}'?`)) return;
-
+    async function deleteItem(name) {
       const BASE_URL = location.hostname.includes('localhost')
         ? 'http://localhost:3001'
         : 'https://techdominion-backend.onrender.com';
 
-      try {
-        const res = await fetch(`${BASE_URL}/api/${id}`, { method: 'DELETE' });
-        const data = await res.json();
+      if (!confirm(`Are you sure you want to delete '${decodeURIComponent(name)}'?`)) return;
 
+      try {
+        const res = await fetch(`${BASE_URL}/api/name/${decodeURIComponent(name)}`, {
+
+          method: 'DELETE'
+        });
+        if (!res.ok) throw new Error('Delete failed');
+        const data = await res.json();
         alert(data.message || 'Deleted!');
         fetchItemsFromServer();
       } catch (err) {
@@ -222,35 +214,15 @@
         console.error(err);
       }
     }
-    async function addItemSubmitHandler(e) {
-      e.preventDefault();
-      await saveItem('POST');
-    }
 
-    async function updateItemSubmitHandler(e) {
-      e.preventDefault();
-
-      const id = form.dataset.editingId;
-      if (!id) {
-        alert('No item selected for update');
-        return;
-        form.querySelector('button[type="submit"]').textContent = 'Add';
-
-      }
-
-      await saveItem('PUT', id);
-
-      form.removeEventListener('submit', updateItemSubmitHandler);
-      form.addEventListener('submit', addItemSubmitHandler);
-      delete form.dataset.editingId;
-    }
-    async function editItem(id) {
+    async function editItem(name) {
       const BASE_URL = location.hostname.includes('localhost')
         ? 'http://localhost:3001'
         : 'https://techdominion-backend.onrender.com';
 
       try {
-        const res = await fetch(`${BASE_URL}/api/${id}`);
+        const res = await fetch(`${BASE_URL}/api/name/${decodeURIComponent(name)}`);
+
         if (!res.ok) throw new Error('Item not found');
         const item = await res.json();
 
@@ -262,71 +234,90 @@
         document.getElementById('img').value = item.image || '';
         document.getElementById('link').value = item.link || '';
 
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        form.removeEventListener('submit', addItemSubmitHandler);
-        form.addEventListener('submit', updateItemSubmitHandler);
-
-        form.dataset.editingId = id;
-
-        alert('Edit the fields and click Add (which will now update)');
-        updateFormFields();
+        form.dataset.editingName = item.name;
+        category.dispatchEvent(new Event('change'));
+        form.querySelector('button[type="submit"]').textContent = 'Update';
       } catch (err) {
-        alert('Error loading item for edit');
+        alert('Error loading item');
         console.error(err);
       }
-      form.querySelector('button[type="submit"]').textContent = 'Update';
-
     }
 
+    async function saveItem(e) {
+      e.preventDefault();
 
-
-    async function saveItem(method, id) {
       const BASE_URL = location.hostname.includes('localhost')
         ? 'http://localhost:3001'
         : 'https://techdominion-backend.onrender.com';
 
-      const cat = category.value;
-      let item = {
+      const cat = category.value.trim().toLowerCase();
+      const editingName = form.dataset.editingName;
+      const isEdit = !!editingName;
+
+      const item = {
         name: document.getElementById('name').value.trim(),
         description: document.getElementById('desc').value.trim(),
         category: cat
       };
 
+      if (!item.name || !item.description || !item.category) {
+        alert("Please fill all required fields.");
+        return;
+      }
+
       if (cat === 'software' || cat === 'courses') {
         item.discountedPrice = price.value.trim();
         item.originalPrice = originalPrice.value.trim();
         item.image = img.value.trim();
-        const msgText = encodeURIComponent(`Hi! I want to buy ${item.name}`);
-        item.link = `https://t.me/monarchrise?text=${msgText}`;
+        item.link = `https://t.me/monarchrise?text=${encodeURIComponent('Hi! I want to buy ' + item.name)}`;
       } else if (cat === 'notes' || cat === 'projects') {
         item.link = link.value.trim();
       }
 
+      const url = isEdit
+        ? `${BASE_URL}/api/items/name/${encodeURIComponent(editingName)}`
+        : `${BASE_URL}/api/items`;
+
+      const method = isEdit ? 'PUT' : 'POST';
+
       try {
-        const url = method === 'PUT' ? `${BASE_URL}/api/${id}` : `${BASE_URL}/api/items`;
         const res = await fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(item)
         });
 
-        const data = await res.json();
+        let data;
+try {
+  data = await res.json();
+} catch (e) {
+  throw new Error("Invalid server response");
+}
+
         if (!res.ok) throw new Error(data.message || 'Server error');
 
-        alert(method === 'POST' ? 'Item added successfully!' : 'Item updated successfully!');
+        showPopup(isEdit ? '✅ Item Updated!' : '✅ Item Added!');
         form.reset();
+        delete form.dataset.editingName;
+        form.querySelector('button[type="submit"]').textContent = 'Add';
+        category.dispatchEvent(new Event('change'));
         fetchItemsFromServer();
-        updateFormFields();
       } catch (err) {
         alert('Failed: ' + err.message);
         console.error(err);
       }
     }
 
-    form.addEventListener('submit', addItemSubmitHandler);
+    function showPopup(msg = "✅ Success!") {
+      const popup = document.getElementById("popup");
+      popup.textContent = msg;
+      popup.style.display = "block";
+      setTimeout(() => popup.style.display = "none", 2000);
+    }
 
+    form.addEventListener('submit', saveItem);
     fetchItemsFromServer();
+    category.dispatchEvent(new Event('change'));
   </script>
 </body>
 </html>

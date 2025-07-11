@@ -8,12 +8,12 @@
     body {
       margin: 0;
       font-family: 'Poppins', sans-serif;
-      background: #f6f9fc;
-      color: #333;
+      background: #0a0a0f;
+      color: #fff;
     }
 
     header {
-      background: #0f0c29;
+       background: radial-gradient(ellipse at center, #0f111a 0%, #06080d 100%);
       padding: 1rem 2rem;
       color: #00ffe7;
       text-align: center;
@@ -26,6 +26,23 @@
       text-shadow: 0 0 8px #00ffe7;
     }
 
+    .search-container {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    #searchInput {
+      padding: 10px 20px;
+      width: 80%;
+      max-width: 500px;
+      border-radius: 50px;
+      border: none;
+      font-size: 1rem;
+      background: rgba(0, 255, 255, 0.05);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.3);
+    }
+
     .project-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -36,30 +53,30 @@
     }
 
     .project-card {
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
       padding: 1.5rem;
       border-radius: 1rem;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 4px 20px rgba(0, 255, 255, 0.05);
       transition: transform 0.3s ease;
     }
 
     .project-card:hover {
       transform: translateY(-6px);
-      box-shadow: 0 8px 25px rgba(0, 255, 255, 0.2);
+      box-shadow: 0 8px 25px rgba(0, 255, 255, 0.15);
     }
 
     .project-card h3 {
-      font-size: 1.4rem;
-      color: #2b6cb0;
+      font-size: 1.3rem;
+      color: #00ffe7;
       margin-bottom: 0.5rem;
     }
 
     .project-card p {
       font-size: 0.95rem;
       line-height: 1.4;
-      color: #222;
+      color: #ccc;
     }
 
     .project-card a {
@@ -67,7 +84,7 @@
       margin-top: 0.8rem;
       background: #00ffe7;
       color: #0f0c29;
-      padding: 0.6rem 1.2rem;
+      padding: 0.5rem 1rem;
       border-radius: 999px;
       text-decoration: none;
       font-weight: bold;
@@ -82,7 +99,7 @@
       text-align: center;
       padding: 2rem 1rem;
       font-size: 0.9rem;
-      background: #0f0c29;
+       background: radial-gradient(ellipse at center, #0f111a 0%, #06080d 100%);
       color: #ccc;
       border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
@@ -111,8 +128,12 @@
     <h1>Our Project Showcase</h1>
   </header>
 
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Search projects..." />
+  </div>
+
   <section class="project-container" id="project-list">
-    <!-- Project cards will be injected dynamically -->
+    <!-- Projects will be added here -->
   </section>
 
   <footer>
@@ -121,23 +142,63 @@
     💡 Proudly made by Tech Dominion 
   </footer>
 
-  <script>
-    fetch('https://techdominion-backend.onrender.com/api/items')
-      .then(res => res.json())
-      .then(data => {
-        const projectList = document.getElementById('project-list');
-        const projectsOnly = data.filter(item => item.category === 'projects'); // ✅ plural
-        projectsOnly.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'project-card';
-          div.innerHTML = `
-            <h3>${item.name}</h3>
-            <p>${item.description}</p>
-            <a href="${item.link || '#'}" target="_blank">View Project</a>
-          `;
-          projectList.appendChild(div);
-        });
-      });
-  </script>
+<script>
+  let allProjects = [];
+  let currentIndex = 0;
+  const BATCH_SIZE = 6;
+  const listContainer = document.getElementById('project-list');
+  const searchInput = document.getElementById('searchInput');
+
+  async function fetchProjects() {
+    const res = await fetch('https://techdominion-backend.onrender.com/api/all');
+    const data = await res.json();
+    allProjects = data.filter(item => item.category === 'projects');
+    renderProjects(allProjects.slice(0, BATCH_SIZE));
+  }
+
+  function renderProjects(projects) {
+    listContainer.innerHTML = '';
+    if (projects.length === 0) {
+      listContainer.innerHTML = "<p style='text-align:center;'>No projects found.</p>";
+      return;
+    }
+    projects.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'project-card';
+      div.innerHTML = `
+        <h3>${item.name}</h3>
+        <p>${item.description}</p>
+        <a href="${item.link || '#'}" target="_blank">View Project</a>
+      `;
+      listContainer.appendChild(div);
+    });
+  }
+
+  // Lazy loading when scroll reaches bottom
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+      const nextBatch = allProjects.slice(currentIndex, currentIndex + BATCH_SIZE);
+      renderProjects(nextBatch);
+      currentIndex += BATCH_SIZE;
+    }
+  }, { threshold: 1 });
+
+  const sentinel = document.createElement('div');
+  sentinel.style.height = '1px';
+  document.body.appendChild(sentinel);
+  observer.observe(sentinel);
+
+  // Search functionality
+  searchInput.addEventListener('input', () => {
+    const query = searchInput.value.trim().toLowerCase();
+    const filtered = allProjects.filter(p =>
+      p.name.toLowerCase().includes(query) || (p.description || '').toLowerCase().includes(query)
+    );
+    renderProjects(filtered);
+  });
+
+  fetchProjects();
+</script>
+
 </body>
 </html>
